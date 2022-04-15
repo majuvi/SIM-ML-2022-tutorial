@@ -1,0 +1,129 @@
+---
+title: "Practical 1 Fitting and Evaluating models"
+output: html_document
+date: '2022-04-13'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+If you haven't installed the libraries "dplyr", "glmnet", "mlbench" and "ranger" yet, run this code.
+```{r}
+list.of.packages <- c("dplyr", "glmnet", "mlbench", "ranger", "pROC")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+```
+
+
+load the libraries
+```{r message=FALSE, warning=FALSE}
+library(glmnet)
+library(dplyr)
+library(mlbench)
+library(ranger)
+library(pROC)
+```
+
+## 1.1 Hitters 
+
+In this exercise you will learn how to train and evaluate linear models with 
+the "glmnet" library. It contains the Elastic Net algorithm, 
+which is a combination of Ridge and Lasso regression.  
+
+The data we use here are statistical records of 
+American baseball players in 1986 and 1987. More information about this data can be found in https://www.kaggle.com/datasets/floser/hitters?msclkid=a7936d81bc9211ec9522d9a294f2c801. 
+
+Your task is to predict the players' salaries from the other features (variables) in the dataset. 
+The average salary in the '80s was pretty high already, around $500k a year. 
+Nowadays, in 2022, this is around $5 million. 
+After this machine learning course, perhaps you should consider a course 
+catching and throwing balls as well. But first things first, good luck with 
+this machine learning practical! 
+
+#### Load data
+You can first set a seed in order to get reproducible results. Then load the data with the line below. The dataframe `Hitters` is automatically generated. The first few samples of `Hitters` are obtained with `head(Hitters)`  
+```{r}
+set.seed(42)
+data(Hitters, package = "ISLR")
+head(Hitters)
+```
+</br>
+
+#### 1. Analyse data
+Do some general data analysis.</br> 
+
+a. How large is this dataset actually? </br> 
+b. Is this a regression or classification task?</br>
+c. What are the mean and median of the salaries? A histogram of the salaries could give you even better insights. </br>
+d. What data types does the data contain?</br>
+e. Are there NaN values in the data? What to do with those?</br>
+
+</br>
+
+#### 2. Preprocess data
+a. The NaN values you found in 1 are not useful for training a model. The easiest way to deal with them is removing. Remove the samples that contain any NaNs. How many samples are left now? Is that sufficient?
+
+b. For training linear models with regularization it is important to use scaled data. Otherwise the regularization treat the features unequally. Scale the numeric data using the `scale()` function. Make sure you put all data together back in one dataframe.   
+
+</br>
+
+#### 3. Prepare data for training
+The model in the `glmnet` package requires data input where the features and target values (labels)
+are fed into the training function as separate arguments. Make a data matrix `X` for the features and a data matrix `y`  for the targets. Use the function `data.matrix()` to convert a dataframe to a data matrix. You can use the function `select()` from the `dplyr` package to separate features and targets. 
+
+</br>
+
+#### 4. Train and evaluate 
+You might have noticed the dataset is quite small. Picking a single validation dataset will give a biased result (why?). The best way to train your model is the use of cross validation. 
+Use the function `cv.glmnet()` for cross validation. A nice feature of this function is that it 
+automatically trains for many different values of lambda (regularization parameter). You can specify the other parameter `alpha` (proportion ridge / lasso) yourself. 
+
+
+a. Train an Elastic Net model with 5-fold cross validation, plot the output. Let's first try this with `alpha=0.5`. You can use the mean squared error (mse) as metric. Which value of lambda gives the best result?    
+
+b. Make a cross validation "for loop" for different values of alpha (between 0 and 1). Use the mse as metric again. Which parameters give you the best model?
+
+</br>
+
+#### 5. Improve model performance
+In order to improve prediction performance, let's check what happens if we add the cross terms as features. An example of a cross term is "Hits" x "Runs". A quick way to obtain all possible cross terms is `X = model.matrix(Salary ~ . ^ 2, Hitters)[,-1]` 
+
+a. Make a new feature set with all cross terms and perform cross validation again. Can you improve the prediction performance?
+
+b. What happens with the model coefficients for increased alpha? (use function `coef()`). Can you explain this?  If your code is correct you will see that alpha works as a feature selection parameter in the Lasso algorithm.
+
+</br>
+
+## 1.2 Diabetes prediction
+
+Welcome to the second exercise. Here you will predict whether a member of the Pima Indian dataset has diabetes or not. First load the data. The loaded dataframe is `PimaIndiansDiabetes`. The first rows are obtained with `head(PimaIndiansDiabetes)`
+```{r}
+data(PimaIndiansDiabetes)
+head(PimaIndiansDiabetes)
+```
+
+#### 1.  Explore the data
+Make a summary of the data and check the data types. How many positive and negative diabetes samples do the data contain?
+</br>
+
+#### 2. Prepare data for training
+For simplicity we don't do cross validation here, but we just make a separate validation training dataset. 
+Split the data into 80% train and 20% validation data. 
+</br>
+
+#### 3. Training
+Use the `ranger` function to train a random forest model on the training data.  
+</br>
+
+#### 4. Evaluate 
+Make predictions on the validation data with the function `predict()`. 
+From the predictions and true diabetes values, make a confusion matrix and obtain the accuracy.
+</br>
+
+#### 5. AUC
+Use the function `auc` from the pROC library to calculate the AUC. Make sure the "positive" cases agree with "pos" and the control cases agree with "neg". If you swap those, you will get another results (why?).
+</br>
+
+#### 6. Improve performance
+The default number of trees used in the ranger library is 500. Vary the number of trees and check how much you can improve the model. Use the argument `num.trees`. What do you notice? 
+In order to get a fair comparison, set the seed `set.seed(123)` each time you run.

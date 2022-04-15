@@ -1,0 +1,257 @@
+---
+title: "Practical 1 Fitting and Evaluating models"
+output: html_document
+date: '2022-04-13'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+If you haven't installed the libraries "dplyr", "glmnet", "mlbench" and "ranger" yet, run this code.
+```{r}
+list.of.packages <- c("dplyr", "glmnet", "mlbench", "ranger", "pROC")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+```
+
+
+load the libraries
+```{r message=FALSE, warning=FALSE}
+library(glmnet)
+library(dplyr)
+library(mlbench)
+library(ranger)
+library(pROC)
+```
+
+## 1.1 Hitters 
+
+In this exercise you will learn how to train and evaluate linear models with 
+the "glmnet" library. It contains the Elastic Net algorithm, 
+which is a combination of Ridge and Lasso regression.  
+
+The data we use here are statistical records of 
+American baseball players in 1986 and 1987. More information about this data can be found in https://www.kaggle.com/datasets/floser/hitters?msclkid=a7936d81bc9211ec9522d9a294f2c801. 
+
+Your task is to predict the players' salaries from the other features (variables) in the dataset. 
+The average salary in the '80s was pretty high already, around $500k a year. 
+Nowadays, in 2022, this is around $5 million. 
+After this machine learning course, perhaps you should consider a course 
+catching and throwing balls as well. But first things first, good luck with 
+this machine learning practical! 
+
+#### Load data
+You can first set a seed in order to get reproducible results. Then load the data with the line below. The dataframe `Hitters` is automatically generated. The first few samples of `Hitters` are obtained with `head(Hitters)`  
+```{r}
+set.seed(123)
+data(Hitters, package = "ISLR")
+head(Hitters)
+```
+</br>
+
+#### 1. Analyse data
+Do some general data analysis.</br> 
+
+**a. How large is this dataset actually?** </br> 
+```{r}
+dim(Hitters)
+```
+
+**b. Is this a regression or classification task?**</br>
+This is a regression task because the variable to predict (salary) continuous. 
+</br>
+**c. What are the mean and median of the salaries? A histogram of the salaries could give you even better insights.** </br>
+Using the function `summary` gives a lot of info at once. Mean salary is $535.9 k, median salary is $425.0 k
+```{r}
+summary(Hitters)
+```
+
+```{r}
+hist(Hitters$Salary, 
+     xlab = "Salary, $1000s", 
+     main = "Baseball Players' Salaries")
+```
+
+**d. What data types does the data contain?**</br>
+Using the `str()` function give you the types of data per column at once.
+```{r}
+str(Hitters)
+```
+
+**e. Are there NaN values in the data? What to do with those?**</br>
+The `Salary` column has 59 NaN values. Easiest is to remove them from the data.  
+```{r}
+colSums(is.na(Hitters))
+```
+ 
+</br>
+
+#### 2. Preprocess data
+**a. The NaN values you found in 1 are not useful for training a model. The easiest way to deal with them is removing. Remove the samples that contain any NaNs. How many samples are left now? Is that sufficient?**
+```{r}
+Hitters = na.omit(Hitters)
+dim(Hitters)
+```
+263 rows are left. It is not a lot, but enough to try out training a machine learning model.
+
+**b. For training linear models with regularization it is important to use scaled data. Otherwise the regularization treat the features unequally. Scale the numeric data using the `scale()` function. Make sure you put all data together back in one dataframe.**
+```{r}
+columns_scale = names(select(Hitters, -c(League, NewLeague, Division)))
+Hitters[, columns_scale] <- scale(Hitters[, columns_scale])
+head(Hitters)
+```
+
+
+</br>
+
+#### 3. Prepare data for training
+The model in the `glmnet` package requires data input where the features and target values (labels)
+are fed into the training function as separate arguments. Make a data matrix `X` for the features and a data matrix `y`  for the targets. Use the function `data.matrix()` to convert a dataframe to a data matrix. You can use the function `select()` from the `dplyr` package to separate features and targets. 
+```{r}
+X <- data.matrix(dplyr::select(Hitters, -Salary))
+y <- data.matrix(dplyr::select(Hitters, Salary))
+```
+
+</br>
+
+#### 4. Train and evaluate 
+You might have noticed the dataset is quite small. Picking a single validation dataset will give a biased result (why?). The best way to train your model is the use of cross validation. 
+Use the function `cv.glmnet()` for cross validation. A nice feature of this function is that it 
+automatically trains for many different values of lambda (regularization parameter). You can specify the other parameter `alpha` (proportion ridge / lasso) yourself. 
+
+
+a. Train an Elastic Net model with 5-fold cross validation, plot the output. Let's first try this with `alpha=0.5`. You can use the mean squared error (mse) as metric. Which value of lambda gives the best result?   
+```{r}
+set.seed(123)
+fit_cv = cv.glmnet(X, y, alpha = 0.5, nfold=5,  type.measure = "mse")
+plot(fit_cv, main=paste("alpha =", toString(0.5)))
+min_mse <- fit_cv$cvm[fit_cv$lambda == fit_cv$lambda.min] # best lambda, CV-MSE minimum
+print(fit_cv$lambda.min)
+print(min_mse)
+
+```
+
+b. Make a cross validation "for loop" for different values of alpha (between 0 and 1). Use the mse as metric again. Which parameters give you the best model?
+```{r}
+set.seed(123)
+for(alpha_cv in c(0, 0.1, 0.5, 1)){
+  fit_cv <- cv.glmnet(X, y, nfold=5,  type.measure = "mse", alpha=alpha_cv)
+  
+  plot(fit_cv, main=paste("alpha =", toString(alpha_cv)))
+  min_MSE <- fit_cv$cvm[fit_cv$lambda == fit_cv$lambda.min]
+  
+  print(paste("alpha=", alpha_cv, "lambda_min=", fit_cv$lambda.min, "MSE=", min_MSE)) # print MSE
+  
+}
+```
+For seed 123, alpha=0 and lambda=0.056589 gives the lowest mse and thus the best fit. However, note that the mse values vary with varying seed, which means there is some statistical fluctuation dependend on train-validation sample selection and automatic lambda selection by the software.
+
+
+</br>
+
+#### 5. Improve model performance
+In order to improve prediction performance, let's check what happens if we add the cross terms as features. An example of a cross term is "Hits" x "Runs". A quick way to obtain all possible cross terms is `X = model.matrix(Salary ~ . ^ 2, Hitters)[,-1]` 
+
+**a. Make a new feature set with all cross terms and perform cross validation again. Can you improve the prediction performance?**
+```{r}
+X = model.matrix(Salary ~ . ^ 2, Hitters)[,-1]
+y = Hitters$Salary
+```
+
+```{r}
+set.seed(123)
+for(alpha_cv in c(0, 0.1, 0.5, 1)){
+  fit_cv <- cv.glmnet(X, y, nfold=5,  type.measure = "mse", alpha=alpha_cv)
+  
+  plot(fit_cv, main=paste("alpha =", toString(alpha_cv)))
+  min_MSE <- fit_cv$cvm[fit_cv$lambda == fit_cv$lambda.min]
+  
+  print(paste("alpha =", alpha_cv, "lambda_min =", fit_cv$lambda.min, "MSE =", min_MSE)) # print MSE
+}
+```
+Yes, the mse's are lower now. High values of alpha give the best results. Note that the mse values vary with varying seed, which means there is some statistical fluctuation dependent on train-validation sample selection.  
+
+
+**b. What happens with the model coefficients for increased alpha? (use function `coef()`). Can you explain this?  If your code is correct you will see that alpha works as a feature selection parameter in the Lasso algorithm.**
+```{r}
+set.seed(123)
+for(alpha_cv in c(0, 0.1, 0.5, 1)){
+  fit_cv <- cv.glmnet(X, y, nfold=5,  type.measure = "mse", alpha=alpha_cv)
+  min_MSE <- fit_cv$cvm[fit_cv$lambda == fit_cv$lambda.min]
+  
+  print(paste('alpha =', alpha_cv))
+  print(coef(fit_cv, s=fit_cv$lambda.min))
+}
+```
+
+The closer alpha to 1, the more feature coefficients are set to zero. This is the result of the feature selection mechanism of the Lasso algorithm. This enables us to get insight on which features are useful for predictions and which are not.  
+
+</br>
+
+## 1.2 Diabetes prediction
+
+Welcome to the second exercise. Here you will predict whether a member of the Pima Indian dataset has diabetes or not. First load the data. The loaded dataframe is `PimaIndiansDiabetes`. The first rows are obtained with `head(PimaIndiansDiabetes)`
+```{r}
+data(PimaIndiansDiabetes)
+head(PimaIndiansDiabetes)
+```
+
+### 1.  Explore the data
+Make a summary of the data and check the data types. How many positive and negative diabetes samples do the data contain?
+```{r}
+summary(PimaIndiansDiabetes)
+```
+
+### 2. Prepare data for training
+For simplicity we don't do cross validation here, but we just make a separate validation training dataset. 
+Split the data into 80% train and 20% validation data. 
+```{r}
+train.idx <- sample(nrow(PimaIndiansDiabetes), 0.8 * nrow(PimaIndiansDiabetes))
+data_train<- PimaIndiansDiabetes[train.idx, ]
+data_val <- PimaIndiansDiabetes[-train.idx, ]
+```
+
+
+### 3. Training
+Use the `ranger` function to train a random forest model on the training data.  
+```{r}
+set.seed(123)
+fit_rf <- ranger(diabetes  ~ ., data = data_train)
+print(fit_rf)
+```
+
+### 4. Evaluate 
+Make predictions on the validation data with the function `predict()`. 
+From the predictions and true diabetes values, make a confusion matrix and obtain the accuracy.
+```{r}
+preds <- predict(fit_rf, data = data_val)
+cm <- table(data_val$diabetes, preds$predictions)
+accuracy <- sum(cm[1], cm[4]) / sum(cm[1:4])
+print(cm)
+print(accuracy)
+```
+
+### 5. AUC
+Use the function `auc` from the pROC library to calculate the AUC. Make sure the "positive" cases agree with "pos" and the control cases agree with "neg". If you swap those, you will get another results (why?).
+```{r message=FALSE, warning=FALSE}
+auc_pima <- pROC::auc(as.numeric(preds$predictions), as.numeric(data_val$diabetes))
+print(auc_pima)
+```
+The auc is based on true positives, true negatives, false positives and false negatives. Those values change if you change "neg" to the 'positive' case and "pos" to the 'negative' case. 
+
+### 6. Improve performance
+The default number of trees used in the ranger library is 500. Vary the number of trees and check how much you can improve the model. Use the argument `num.trees`. What do you notice? 
+In order to get a fair comparison, set the seed `set.seed(123)` each time you run.
+
+```{r message=FALSE, warning=FALSE}
+set.seed(123)
+for(ntrees in c(10, 50, 100, 500, 1000)){
+  fit_rf <- ranger(diabetes  ~ ., data = data_train, num.trees=ntrees)
+  preds <- predict(fit_rf, data = data_val)
+  cm <- table(data_val$diabetes, preds$predictions)
+  accuracy <- sum(cm[1], cm[4]) / sum(cm[1:4])
+  auc_pima <- pROC::auc(as.numeric(preds$predictions), as.numeric(data_val$diabetes))
+  print(paste("ntrees =", ntrees, "accuracy = ", accuracy, "auc = ", auc_pima))
+} 
+```
+More trees give better performance in general, but there is always a plateau where the performance flattens off. In this small data set example, it seems that this plateau is already reached around 50 trees. However, this can change if you change the seed! (try it yourself!). So, there is a large random factor involved.
