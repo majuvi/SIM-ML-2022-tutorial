@@ -126,4 +126,4 @@ Use the function `auc` from the pROC library to calculate the AUC. Make sure the
 
 #### 6. Improve performance
 The default number of trees used in the ranger library is 500. Vary the number of trees and check how much you can improve the model. Use the argument `num.trees`. What do you notice? 
-In order to get a fair comparison, set the seed `set.seed(123)` each time you run.
+In order to get reproducible results, set the seed `set.seed(123)` each time you run.

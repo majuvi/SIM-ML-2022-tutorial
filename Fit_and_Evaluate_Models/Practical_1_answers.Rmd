@@ -234,7 +234,7 @@ print(accuracy)
 ### 5. AUC
 Use the function `auc` from the pROC library to calculate the AUC. Make sure the "positive" cases agree with "pos" and the control cases agree with "neg". If you swap those, you will get another results (why?).
 ```{r message=FALSE, warning=FALSE}
-auc_pima <- pROC::auc(as.numeric(preds$predictions), as.numeric(data_val$diabetes))
+auc_pima <- pROC::auc(as.numeric(preds$predictions), as.numeric(data_val$diabetes), levels=c(1,2))
 print(auc_pima)
 ```
 The auc is based on true positives, true negatives, false positives and false negatives. Those values change if you change "neg" to the 'positive' case and "pos" to the 'negative' case. 
