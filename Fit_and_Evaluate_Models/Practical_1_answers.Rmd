@@ -233,15 +233,15 @@ print(accuracy)
 
 ### 5. AUC
 Use the function `auc` from the pROC library to calculate the AUC. Make sure the "positive" cases agree with "pos" and the control cases agree with "neg". If you swap those, you will get another results (why?).
-```{r message=FALSE, warning=FALSE}
-auc_pima <- pROC::auc(as.numeric(preds$predictions), as.numeric(data_val$diabetes), levels=c(1,2))
+```{r message=TRUE, warning=TRUE}
+auc_pima <- pROC::auc(as.numeric(preds$predictions), as.numeric(data_val$diabetes))
 print(auc_pima)
 ```
 The auc is based on true positives, true negatives, false positives and false negatives. Those values change if you change "neg" to the 'positive' case and "pos" to the 'negative' case. 
 
 ### 6. Improve performance
 The default number of trees used in the ranger library is 500. Vary the number of trees and check how much you can improve the model. Use the argument `num.trees`. What do you notice? 
-In order to get a fair comparison, set the seed `set.seed(123)` each time you run.
+In order to get reproducible results, set the seed `set.seed(123)` each time you run.
 
 ```{r message=FALSE, warning=FALSE}
 set.seed(123)
