@@ -255,3 +255,8 @@ for(ntrees in c(10, 50, 100, 500, 1000)){
 } 
 ```
 More trees give better performance in general, but there is always a plateau where the performance flattens off. In this small data set example, it seems that this plateau is already reached around 50 trees. However, this can change if you change the seed! (try it yourself!). So, there is a large random factor involved.
+
+```{r}
+sessionInfo()
+```
+
