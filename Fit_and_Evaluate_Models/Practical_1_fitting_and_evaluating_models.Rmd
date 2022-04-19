@@ -41,7 +41,7 @@ catching and throwing balls as well. But first things first, good luck with
 this machine learning practical! 
 
 #### Load data
-You can first set a seed in order to get reproducible results. Then load the data with the line below. The dataframe `Hitters` is automatically generated. The first few samples of `Hitters` are obtained with `head(Hitters)`  
+You can first set a seed in order to get reproducible results. Then load the data with the line below. The data frame `Hitters` is automatically generated. The first few samples of `Hitters` are obtained with `head(Hitters)`  
 ```{r}
 set.seed(42)
 data(Hitters, package = "ISLR")
@@ -96,7 +96,7 @@ b. What happens with the model coefficients for increased alpha? (use function `
 
 ## 1.2 Diabetes prediction
 
-Welcome to the second exercise. Here you will predict whether a member of the Pima Indian dataset has diabetes or not. First load the data. The loaded dataframe is `PimaIndiansDiabetes`. The first rows are obtained with `head(PimaIndiansDiabetes)`
+Welcome to the second exercise. Here you will predict whether a member in the Pima Indian dataset has diabetes or not. First load the data. The loaded dataframe is `PimaIndiansDiabetes`. The first rows are obtained with `head(PimaIndiansDiabetes)`
 ```{r}
 data(PimaIndiansDiabetes)
 head(PimaIndiansDiabetes)
@@ -117,7 +117,7 @@ Use the `ranger` function to train a random forest model on the training data.
 
 #### 4. Evaluate 
 Make predictions on the validation data with the function `predict()`. 
-From the predictions and true diabetes values, make a confusion matrix and obtain the accuracy.
+From the predictions and true diabetes values, make a confusion matrix and calculate the accuracy.
 </br>
 
 #### 5. AUC

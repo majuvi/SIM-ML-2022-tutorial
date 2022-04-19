@@ -58,7 +58,7 @@ dim(Hitters)
 ```
 
 **b. Is this a regression or classification task?**</br>
-This is a regression task because the variable to predict (salary) continuous. 
+This is a regression task because the variable to predict (salary) is continuous. 
 </br>
 **c. What are the mean and median of the salaries? A histogram of the salaries could give you even better insights.** </br>
 Using the function `summary` gives a lot of info at once. Mean salary is $535.9 k, median salary is $425.0 k
@@ -94,7 +94,7 @@ dim(Hitters)
 ```
 263 rows are left. It is not a lot, but enough to try out training a machine learning model.
 
-**b. For training linear models with regularization it is important to use scaled data. Otherwise the regularization treat the features unequally. Scale the numeric data using the `scale()` function. Make sure you put all data together back in one dataframe.**
+**b. For training linear models with regularization it is important to use scaled data. Otherwise the regularization treats the features unequally. Scale the numeric data using the `scale()` function. Make sure you put all data together back in one dataframe.**
 ```{r}
 columns_scale = names(select(Hitters, -c(League, NewLeague, Division)))
 Hitters[, columns_scale] <- scale(Hitters[, columns_scale])
@@ -106,7 +106,7 @@ head(Hitters)
 
 #### 3. Prepare data for training
 The model in the `glmnet` package requires data input where the features and target values (labels)
-are fed into the training function as separate arguments. Make a data matrix `X` for the features and a data matrix `y`  for the targets. Use the function `data.matrix()` to convert a dataframe to a data matrix. You can use the function `select()` from the `dplyr` package to separate features and targets. 
+are fed into the training function as separate arguments. Make a data matrix `X` for the features and a data matrix `y`  for the targets. Use the function `data.matrix()` to convert a data frame to a data matrix. You can use the function `select()` from the `dplyr` package to separate features and targets. 
 ```{r}
 X <- data.matrix(dplyr::select(Hitters, -Salary))
 y <- data.matrix(dplyr::select(Hitters, Salary))
@@ -144,13 +144,13 @@ for(alpha_cv in c(0, 0.1, 0.5, 1)){
   
 }
 ```
-For seed 123, alpha=0 and lambda=0.056589 gives the lowest mse and thus the best fit. However, note that the mse values vary with varying seed, which means there is some statistical fluctuation dependend on train-validation sample selection and automatic lambda selection by the software.
+For seed 123, alpha=0 and lambda=0.056589 gives the lowest mse and thus the best fit. However, note that the mse values vary with varying seed, which means there is some statistical fluctuation dependent on train-validation sample selection and automatic lambda selection by the software.
 
 
 </br>
 
 #### 5. Improve model performance
-In order to improve prediction performance, let's check what happens if we add the cross terms as features. An example of a cross term is "Hits" x "Runs". A quick way to obtain all possible cross terms is `X = model.matrix(Salary ~ . ^ 2, Hitters)[,-1]` 
+In order to improve prediction performance, let's check what happens if we add the cross terms as features. An example of a cross term is "Hits" x "Runs". A quick way to obtain data including all possible cross terms is `X = model.matrix(Salary ~ . ^ 2, Hitters)[,-1]` 
 
 **a. Make a new feature set with all cross terms and perform cross validation again. Can you improve the prediction performance?**
 ```{r}
@@ -172,7 +172,7 @@ for(alpha_cv in c(0, 0.1, 0.5, 1)){
 Yes, the mse's are lower now. High values of alpha give the best results. Note that the mse values vary with varying seed, which means there is some statistical fluctuation dependent on train-validation sample selection.  
 
 
-**b. What happens with the model coefficients for increased alpha? (use function `coef()`). Can you explain this?  If your code is correct you will see that alpha works as a feature selection parameter in the Lasso algorithm.**
+**b. What happens with the model coefficients for increased alpha? (use function `coef()` to obtain them). Can you explain this?  If your code is correct you will see that alpha works as a feature selection parameter in the Lasso algorithm.**
 ```{r}
 set.seed(123)
 for(alpha_cv in c(0, 0.1, 0.5, 1)){
@@ -190,7 +190,7 @@ The closer alpha to 1, the more feature coefficients are set to zero. This is th
 
 ## 1.2 Diabetes prediction
 
-Welcome to the second exercise. Here you will predict whether a member of the Pima Indian dataset has diabetes or not. First load the data. The loaded dataframe is `PimaIndiansDiabetes`. The first rows are obtained with `head(PimaIndiansDiabetes)`
+Welcome to the second exercise. Here you will predict whether a member in the Pima Indian dataset has diabetes or not. First load the data. The loaded data frame is `PimaIndiansDiabetes`. The first rows are obtained with `head(PimaIndiansDiabetes)`
 ```{r}
 data(PimaIndiansDiabetes)
 head(PimaIndiansDiabetes)
@@ -200,6 +200,7 @@ head(PimaIndiansDiabetes)
 Make a summary of the data and check the data types. How many positive and negative diabetes samples do the data contain?
 ```{r}
 summary(PimaIndiansDiabetes)
+str(PimaIndiansDiabetes)
 ```
 
 ### 2. Prepare data for training
@@ -222,7 +223,7 @@ print(fit_rf)
 
 ### 4. Evaluate 
 Make predictions on the validation data with the function `predict()`. 
-From the predictions and true diabetes values, make a confusion matrix and obtain the accuracy.
+From the predictions and true diabetes values, make a confusion matrix and calculate the accuracy.
 ```{r}
 preds <- predict(fit_rf, data = data_val)
 cm <- table(data_val$diabetes, preds$predictions)

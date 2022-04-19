@@ -433,7 +433,7 @@ head(Hitters)</code></pre>
 <pre class="r"><code>dim(Hitters)</code></pre>
 <pre><code>## [1] 322  20</code></pre>
 <p><strong>b. Is this a regression or classification task?</strong></br>
-This is a regression task because the variable to predict (salary)
+This is a regression task because the variable to predict (salary) is
 continuous. </br> <strong>c. What are the mean and median of the
 salaries? A histogram of the salaries could give you even better
 insights.</strong> </br> Using the function <code>summary</code> gives a
@@ -533,7 +533,7 @@ dim(Hitters)</code></pre>
 <p>263 rows are left. It is not a lot, but enough to try out training a
 machine learning model.</p>
 <p><strong>b. For training linear models with regularization it is
-important to use scaled data. Otherwise the regularization treat the
+important to use scaled data. Otherwise the regularization treats the
 features unequally. Scale the numeric data using the
 <code>scale()</code> function. Make sure you put all data together back
 in one dataframe.</strong></p>
@@ -576,7 +576,7 @@ head(Hitters)</code></pre>
 where the features and target values (labels) are fed into the training
 function as separate arguments. Make a data matrix <code>X</code> for
 the features and a data matrix <code>y</code> for the targets. Use the
-function <code>data.matrix()</code> to convert a dataframe to a data
+function <code>data.matrix()</code> to convert a data frame to a data
 matrix. You can use the function <code>select()</code> from the
 <code>dplyr</code> package to separate features and targets.</p>
 <pre class="r"><code>X &lt;- data.matrix(dplyr::select(Hitters, -Salary))
@@ -632,7 +632,7 @@ for(alpha_cv in c(0, 0.1, 0.5, 1)){
 <pre><code>## [1] &quot;alpha= 1 lambda_min= 0.0059283190243716 MSE= 0.583214727736484&quot;</code></pre>
 <p>For seed 123, alpha=0 and lambda=0.056589 gives the lowest mse and
 thus the best fit. However, note that the mse values vary with varying
-seed, which means there is some statistical fluctuation dependend on
+seed, which means there is some statistical fluctuation dependent on
 train-validation sample selection and automatic lambda selection by the
 software.</p>
 <p></br></p>
@@ -641,8 +641,8 @@ software.</p>
 <h4>5. Improve model performance</h4>
 <p>In order to improve prediction performance, let’s check what happens
 if we add the cross terms as features. An example of a cross term is
-“Hits” x “Runs”. A quick way to obtain all possible cross terms is
-<code>X = model.matrix(Salary ~ . ^ 2, Hitters)[,-1]</code></p>
+“Hits” x “Runs”. A quick way to obtain data including all possible cross
+terms is <code>X = model.matrix(Salary ~ . ^ 2, Hitters)[,-1]</code></p>
 <p><strong>a. Make a new feature set with all cross terms and perform
 cross validation again. Can you improve the prediction
 performance?</strong></p>
@@ -670,9 +670,9 @@ results. Note that the mse values vary with varying seed, which means
 there is some statistical fluctuation dependent on train-validation
 sample selection.</p>
 <p><strong>b. What happens with the model coefficients for increased
-alpha? (use function <code>coef()</code>). Can you explain this? If your
-code is correct you will see that alpha works as a feature selection
-parameter in the Lasso algorithm.</strong></p>
+alpha? (use function <code>coef()</code> to obtain them). Can you
+explain this? If your code is correct you will see that alpha works as a
+feature selection parameter in the Lasso algorithm.</strong></p>
 <pre class="r"><code>set.seed(123)
 for(alpha_cv in c(0, 0.1, 0.5, 1)){
   fit_cv &lt;- cv.glmnet(X, y, nfold=5,  type.measure = &quot;mse&quot;, alpha=alpha_cv)
@@ -1467,8 +1467,8 @@ for predictions and which are not.</p>
 <div id="diabetes-prediction" class="section level2">
 <h2>1.2 Diabetes prediction</h2>
 <p>Welcome to the second exercise. Here you will predict whether a
-member of the Pima Indian dataset has diabetes or not. First load the
-data. The loaded dataframe is <code>PimaIndiansDiabetes</code>. The
+member in the Pima Indian dataset has diabetes or not. First load the
+data. The loaded data frame is <code>PimaIndiansDiabetes</code>. The
 first rows are obtained with <code>head(PimaIndiansDiabetes)</code></p>
 <pre class="r"><code>data(PimaIndiansDiabetes)
 head(PimaIndiansDiabetes)</code></pre>
@@ -1498,6 +1498,17 @@ positive and negative diabetes samples do the data contain?</p>
 ##  Mean   : 79.8   Mean   :31.99   Mean   :0.4719   Mean   :33.24            
 ##  3rd Qu.:127.2   3rd Qu.:36.60   3rd Qu.:0.6262   3rd Qu.:41.00            
 ##  Max.   :846.0   Max.   :67.10   Max.   :2.4200   Max.   :81.00</code></pre>
+<pre class="r"><code>str(PimaIndiansDiabetes)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    768 obs. of  9 variables:
+##  $ pregnant: num  6 1 8 1 0 5 3 10 2 8 ...
+##  $ glucose : num  148 85 183 89 137 116 78 115 197 125 ...
+##  $ pressure: num  72 66 64 66 40 74 50 0 70 96 ...
+##  $ triceps : num  35 29 0 23 35 0 32 0 45 0 ...
+##  $ insulin : num  0 0 0 94 168 0 88 0 543 0 ...
+##  $ mass    : num  33.6 26.6 23.3 28.1 43.1 25.6 31 35.3 30.5 0 ...
+##  $ pedigree: num  0.627 0.351 0.672 0.167 2.288 ...
+##  $ age     : num  50 31 32 21 33 30 26 29 53 54 ...
+##  $ diabetes: Factor w/ 2 levels &quot;neg&quot;,&quot;pos&quot;: 2 1 2 1 2 1 2 1 2 2 ...</code></pre>
 </div>
 <div id="prepare-data-for-training-1" class="section level3">
 <h3>2. Prepare data for training</h3>
@@ -1534,11 +1545,10 @@ print(fit_rf)</code></pre>
 <h3>4. Evaluate</h3>
 <p>Make predictions on the validation data with the function
 <code>predict()</code>. From the predictions and true diabetes values,
-make a confusion matrix and obtain the accuracy.</p>
+make a confusion matrix and calculate the accuracy.</p>
 <pre class="r"><code>preds &lt;- predict(fit_rf, data = data_val)
 cm &lt;- table(data_val$diabetes, preds$predictions)
 accuracy &lt;- sum(cm[1], cm[4]) / sum(cm[1:4])
-
 print(cm)</code></pre>
 <pre><code>##      
 ##       neg pos
@@ -1567,8 +1577,8 @@ and false negatives. Those values change if you change “neg” to the
 <p>The default number of trees used in the ranger library is 500. Vary
 the number of trees and check how much you can improve the model. Use
 the argument <code>num.trees</code>. What do you notice? In order to get
-a fair comparison, set the seed <code>set.seed(123)</code> each time you
-run.</p>
+reproducible results, set the seed <code>set.seed(123)</code> each time
+you run.</p>
 <pre class="r"><code>set.seed(123)
 for(ntrees in c(10, 50, 100, 500, 1000)){
   fit_rf &lt;- ranger(diabetes  ~ ., data = data_train, num.trees=ntrees)
@@ -1588,6 +1598,38 @@ plateau where the performance flattens off. In this small data set
 example, it seems that this plateau is already reached around 50 trees.
 However, this can change if you change the seed! (try it yourself!). So,
 there is a large random factor involved.</p>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 4.1.3 (2022-03-10)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 19044)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=English_Netherlands.1252  LC_CTYPE=English_Netherlands.1252   
+## [3] LC_MONETARY=English_Netherlands.1252 LC_NUMERIC=C                        
+## [5] LC_TIME=English_Netherlands.1252    
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] pROC_1.18.0   ranger_0.13.1 mlbench_2.1-3 dplyr_1.0.8   glmnet_4.1-3 
+## [6] Matrix_1.4-0 
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.8.3     highr_0.9        plyr_1.8.7       bslib_0.3.1     
+##  [5] compiler_4.1.3   pillar_1.7.0     jquerylib_0.1.4  iterators_1.0.14
+##  [9] tools_4.1.3      digest_0.6.29    tibble_3.1.6     jsonlite_1.8.0  
+## [13] evaluate_0.15    lifecycle_1.0.1  lattice_0.20-45  pkgconfig_2.0.3 
+## [17] rlang_1.0.2      foreach_1.5.2    DBI_1.1.2        cli_3.2.0       
+## [21] rstudioapi_0.13  yaml_2.3.5       xfun_0.30        fastmap_1.1.0   
+## [25] stringr_1.4.0    knitr_1.38       generics_0.1.2   sass_0.4.1      
+## [29] vctrs_0.3.8      tidyselect_1.1.2 grid_4.1.3       glue_1.6.2      
+## [33] R6_2.5.1         fansi_1.0.2      survival_3.2-13  rmarkdown_2.13  
+## [37] purrr_0.3.4      magrittr_2.0.2   codetools_0.2-18 htmltools_0.5.2 
+## [41] ellipsis_0.3.2   splines_4.1.3    assertthat_0.2.1 shape_1.4.6     
+## [45] utf8_1.2.2       stringi_1.7.6    crayon_1.5.0</code></pre>
 </div>
 </div>
 
