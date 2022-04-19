@@ -217,7 +217,7 @@ data_val <- PimaIndiansDiabetes[-train.idx, ]
 Use the `ranger` function to train a random forest model on the training data.  
 ```{r}
 set.seed(123)
-fit_rf <- ranger(diabetes  ~ ., data = data_train)
+fit_rf <- ranger(diabetes  ~ ., data = data_train, probability = TRUE)
 print(fit_rf)
 ```
 
@@ -226,16 +226,18 @@ Make predictions on the validation data with the function `predict()`.
 From the predictions and true diabetes values, make a confusion matrix and calculate the accuracy.
 ```{r}
 preds <- predict(fit_rf, data = data_val)
-cm <- table(data_val$diabetes, preds$predictions)
+cm <- table(data_val$diabetes, preds$predictions[,2] > 0.5)
 accuracy <- sum(cm[1], cm[4]) / sum(cm[1:4])
 print(cm)
 print(accuracy)
 ```
 
 ### 5. AUC
-Use the function `auc` from the pROC library to calculate the AUC. Make sure the "positive" cases agree with "pos" and the control cases agree with "neg". If you swap those, you will get another results (why?).
+Use the function `roc` and `auc` from the pROC library to plot ROC-curve and to calculate the AUC. Make sure the "positive" cases agree with "pos" and the control cases agree with "neg". If you swap those, you will get another results (why?).
 ```{r message=TRUE, warning=TRUE}
-auc_pima <- pROC::auc(as.numeric(preds$predictions), as.numeric(data_val$diabetes))
+roc_pima <- pROC::roc(data_val$diabetes, preds$predictions[,2])
+plot(roc_pima)
+auc_pima <- pROC::auc(data_val$diabetes, preds$predictions[,2])
 print(auc_pima)
 ```
 The auc is based on true positives, true negatives, false positives and false negatives. Those values change if you change "neg" to the 'positive' case and "pos" to the 'negative' case. 

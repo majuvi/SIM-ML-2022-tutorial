@@ -50,7 +50,12 @@ print(cm)
 accuracy <- sum(cm[1], cm[4]) / sum(cm[1:4])
 print(accuracy)
 
-pROC::auc(y_pred, y_true)
+# calculating ROC and AUC
+y_pred_prob = as.vector(predict(fit, data.matrix(X_val), type="response"))
+
+proc <- pROC::roc(y_true, y_pred_prob)
+plot(proc)
+pROC::auc(y_true, y_pred_prob)
 
 
 # take whole dataset for cross validation
@@ -82,16 +87,28 @@ titanic_train <- data_titanic[index_train_test_split,]
 titanic_val <- data_titanic[-index_train_test_split,]
 
 # fit random forest
-fit_rf <- ranger::ranger(survived ~ ., data = titanic_train, classification = TRUE, num.trees = 50)
+fit_rf <- ranger::ranger(survived ~ ., data = titanic_train, 
+                         classification = TRUE, num.trees = 50, 
+                         probability = TRUE)
 
 # make predictions
 pred_rf <- predict(fit_rf, data = titanic_val)
 y_pred <- pred_rf$predictions
 y_true <- titanic_val$survived
 
+
 # evaluate
-cm <- table(y_pred, y_true)
+cm <- table(y_true, y_pred[,2] > 0.5)
 accuracy <- sum(cm[1], cm[4]) / sum(cm[1:4])
 print(accuracy)
-pROC::auc(y_pred, y_true)
+
+# ROC and AUC
+proc <- pROC::roc(y_true, y_pred[,2])
+plot(proc)
+pROC::auc(y_true, y_pred[,2])
+
+
+
+
+
 

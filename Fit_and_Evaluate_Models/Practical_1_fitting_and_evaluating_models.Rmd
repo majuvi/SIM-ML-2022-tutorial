@@ -121,7 +121,7 @@ From the predictions and true diabetes values, make a confusion matrix and calcu
 </br>
 
 #### 5. AUC
-Use the function `auc` from the pROC library to calculate the AUC. Make sure the "positive" cases agree with "pos" and the control cases agree with "neg". If you swap those, you will get another results (why?).
+Use the function `roc` and `auc` from the pROC library to plot ROC-curve and to calculate the AUC. Make sure the "positive" cases agree with "pos" and the control cases agree with "neg". If you swap those, you will get another results (why?).
 </br>
 
 #### 6. Improve performance
