@@ -36,7 +36,7 @@ y_val <- titanic_val$survived
 
 
 # train model
-fit <- glmnet(X_train, y_train, family="binomial", alpha=0.5, lambda=0.01)
+fit <- glmnet(X_train, y_train, family="binomial", lambda=0.01, alpha=0.5)
 
 # evaluation fit 
 coef(fit)
@@ -96,16 +96,18 @@ pred_rf <- predict(fit_rf, data = titanic_val)
 y_pred <- pred_rf$predictions
 y_true <- titanic_val$survived
 
+# ROC and AUC
+proc <- pROC::roc(y_true, y_pred[,2])
+plot(proc)
+pROC::auc(y_true, y_pred[,2])
+
 
 # evaluate
 cm <- table(y_true, y_pred[,2] > 0.5)
 accuracy <- sum(cm[1], cm[4]) / sum(cm[1:4])
 print(accuracy)
 
-# ROC and AUC
-proc <- pROC::roc(y_true, y_pred[,2])
-plot(proc)
-pROC::auc(y_true, y_pred[,2])
+
 
 
 
