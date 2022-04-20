@@ -371,7 +371,7 @@ models</h1>
 
 <p>If you haven’t installed the libraries “dplyr”, “glmnet”, “mlbench”
 and “ranger” yet, run this code.</p>
-<pre class="r"><code>list.of.packages &lt;- c(&quot;dplyr&quot;, &quot;glmnet&quot;, &quot;mlbench&quot;, &quot;ranger&quot;, &quot;pROC&quot;)
+<pre class="r"><code>list.of.packages &lt;- c(&quot;dplyr&quot;, &quot;glmnet&quot;, &quot;mlbench&quot;, &quot;ranger&quot;, &quot;pROC&quot;, &quot;ISLR&quot;)
 new.packages &lt;- list.of.packages[!(list.of.packages %in% installed.packages()[,&quot;Package&quot;])]
 if(length(new.packages)) install.packages(new.packages)</code></pre>
 <p>load the libraries</p>
@@ -586,8 +586,8 @@ y &lt;- data.matrix(dplyr::select(Hitters, Salary))</code></pre>
 <div id="train-and-evaluate" class="section level4">
 <h4>4. Train and evaluate</h4>
 <p>You might have noticed the dataset is quite small. Picking a single
-validation dataset will give a biased result (why?). The best way to
-train your model is the use of cross validation. Use the function
+validation dataset will give an unreliable result (why?). The best way
+to train your model is the use of cross validation. Use the function
 <code>cv.glmnet()</code> for cross validation. A nice feature of this
 function is that it automatically trains for many different values of
 lambda (regularization parameter). You can specify the other parameter
