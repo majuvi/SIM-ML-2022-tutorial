@@ -9,6 +9,22 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(sf)
+library(stringr)
+library(ggplot2)
+library(pROC)
+library(Matrix)
+library(xgboost)
+library(DiagrammeR)
+library(DALEX)
+library(DALEXtra)
+```
+
+
 # Data set
 
 ## Load the data set
@@ -16,10 +32,6 @@ knitr::opts_chunk$set(echo = TRUE)
 We use a simulated data set of 711599 persons who are 18+ years old and representative of Amsterdam. The data frame contains the neighbourhood (bu_code), demographic features (age, sex, ...), and survey answers to the health monitor question "Drank Alcohol in the past 12 months" (y = 0,1) for every individual. This simulated data set also contains the true probability of drinking alcohol (p) for every person:
 
 ```{r}
-library(readr)
-library(dplyr)
-library(tidyr)
-
 # Load data set 
 data <- read_csv("SMAP_simulated.zip", show_col_types=F) %>% 
   mutate_if(is.character, as.factor)
@@ -44,10 +56,6 @@ In reality, the problem is that we can have very few people answering the survey
 Lets plot this data. In Small Area Estimation we try to make more accurate estimates of this map:
 
 ```{r}
-library(sf)
-library(stringr)
-library(ggplot2)
-
 # Fetch the geometry of the Netherlands from the internet
 laad_geodata_wfs <- function(region="buurt", year=2020) {
   fn.cache <- sprintf("%s_%d.rds", region, year)
@@ -110,20 +118,26 @@ test  <- !(1:nrow(data) %in% train.idx)
 print(paste(sum(train), sum(test), sep=" / "))
 ```
 
-We use the AUC to compare the models in this example. Because we know the probabilities used to generate the data, we could define a perfect model
+We use the AUC to compare the models in this example. 
 
 ```{r warning=FALSE}
-library(pROC)
 calculate_auc <- function (y_true, y_pred) auc(roc(y_true, y_pred, levels=c(0, 1), direction = '<', quiet=T))
 
 # These are the true answers we seek to predict
 true_values <- data[test,]$y
+```
+
+Because we simulated the data and know the underlying function, we could define a perfect model:
+
+```{r warning=FALSE}
+# These are the probabilities used to generate the data
 true_probability <- data[test,]$p
 
 # This is the best possible performance, with real data there is no way to know this
 print(calculate_auc(true_values, true_probability)) 
-
 ```
+
+
 
 Lets start with the SMAP model. This is the 'true model' we used to simulate the data. To train the model we must give an explicit model specification:
 
@@ -154,12 +168,9 @@ predictions <- predict.smapmodel(model, data[test,])
 print(calculate_auc(true_values, predictions))
 ```
 
-It is very easy to train the XGBoost model and predict with it:
+It is very easy to train an XGBoost model and predict with it:
 
 ```{r warning=FALSE}
-library(Matrix)
-library(xgboost)
-
 # Define a matrix of features as input and a vector of labels as output:
 formula <- y ~ age + sex + ethnicity + marital_status + education +
   hhtype + hhsize + hhhomeownership + hhincomesource + hhincome + hhassets +
@@ -204,7 +215,7 @@ Luckily XGBoost has a ready interface for this. We could also program it manuall
 ```{r}
 set.seed(42)
 model <- xgb.cv(list(objective="binary:logistic", eval_metric="auc"), data=X[train,], label=y[train],
-                nrounds=300, verbose=1, nfold=5, stratified=T, print_every_n=10)
+                nrounds=100, verbose=1, nfold=5, stratified=T, print_every_n=10)
 ```
 
 Overfitting seems to occur after about 50 trees. If we fit more trees, training performance keeps improving but the test performance decreases.
@@ -237,27 +248,19 @@ opt.params
 
 Lets plot the first learned tree. What do we learn?
 
-```{r}
-library(DiagrammeR)
+```{r fig.width=8,fig.height=10}
 model <- xgboost(objective="binary:logistic", eval_metric="logloss", data=as.matrix(X[train,]), label=y[train], nrounds=opt.params$iter, verbose=0)
-xgb.plot.tree(model=model, trees=0:0, width=2000, height=8000)
+xgb.plot.tree(model=model, trees=0:0)
 ```
 
-## Plot some SHAP values
-
-SHAP values are one way to interpret the results. Every individual's predicted outcome
-is decomposed into contribution of their features x_i1 + x_i2 + ... + x_id = y_i, where the
-values of x_ij each get a Shapley value indicating their total contribution to the outcome.
-The math is elegant but a bit complex... 
+## Explaining the model
 
 ```{r}
-library(DALEX)
-library(DALEXtra)
 # DALEX wraps different models inside a interface using an explainer object
 explain_xgb <- explain_xgboost(model = model, data=as.matrix(X[train,]), y = y[train], label = "XGBoost")
 ```
 
-Variable importance plot displays on the aggregate data set level which features are important for prediction:
+*Variable importance plot* displays on the aggregate data set level which features are important for prediction:
 
 ```{r}
 var_importance <- model_parts(explain_xgb)
@@ -265,11 +268,11 @@ plot(var_importance, show_boxplots=F)
 
 ```
 
-On the aggregate data set level, we can use Partial Dependence Plots (PDPs) to investigate how a feature affects the predictions, for example:
+On the aggregate data set level, we can use *Partial Dependence Plots (PDPs)* to investigate how a feature affects the predictions, for example:
 
 ```{r}
-pdp_fare <- model_profile(explain_xgb, variables = "age", type = "partial")
-plot(pdp_fare)
+pdp_age <- model_profile(explain_xgb, variables = "age", type = "partial")
+plot(pdp_age)
 ```
 
 
@@ -280,7 +283,12 @@ person <- as.matrix(X[2,,drop=F])
 predict(explain_xgb, newdata = person)
 ```
 
-The person is a 33 year old Dutch man who is single well-to-do entrepreneur with scientific education, Shapley values indicate these are all quite positive contributions to drinking:
+*SHAP values* are one way to interpret the results. Every individual's predicted outcome
+is decomposed into contribution of their features x_i1 + x_i2 + ... + x_id = y_i, where the
+values of x_ij each get a Shapley value indicating their total contribution to the outcome.
+The math is elegant but a bit complex... 
+
+The person is a 33 year old Dutch man who is single well-to-do entrepreneur with scientific education, SHAP values indicate these are all quite positive contributions to drinking:
 
 ```{r}
 shap_xgb = predict_parts(explainer = explain_xgb, new_observation = person, type = "shap", N=10)
@@ -323,17 +331,22 @@ Interpreting the models:
 
 > Conclusion: Use machine learning when the goal is to predict. It is often easier and more accurate than statistical models. But start with the simplest model.
 
+```{r}
+sessionInfo()
+```
+
+
 
 # EXERCISES
 
 
 **Exercise #1** : Try different machine learning models. For example, random forest. Does it do better?
 
-```{r class.source = 'fold-hide', results='hide'}
+```{r}
 
 ```
 
-**Exercise #2** : Try optimizing more hyperparameters. For example, the 'depth of trees' can also be important.  You can loop over different tree depths (max_depth, 6 is the default) and number of trees (niter) . You can save some time with 'early stopping'. As before, we save the validation AUC while we are training the model. When the validation error stops improving, we stop the training and return the optimal number of trees. This speeds up the hyperparameter search a bit. It can be done like this:
+**Exercise #2** : Try optimizing more hyperparameters. For example, the 'depth of trees' can also be important.  You can loop over different tree depths (max_depth, 6 is the default) and number of trees (nrounds) . You can save some time with 'early stopping'. As before, we save the validation AUC while we are training the model. When the validation error stops improving, we stop the training and return the optimal number of trees. This speeds up the hyperparameter search a bit. It can be done like this:
 
 ```{r}
 # Train a model with early stopping
@@ -344,7 +357,7 @@ model <- xgb.cv(list(objective="binary:logistic", eval_metric="auc"), data=X[tra
 
 Now optimize both depth of trees & number of trees.
 
-```{r  class.source = 'fold-hide', results='hide'}
+```{r warning=F}
 
 ```
 
@@ -362,7 +375,7 @@ print(paste(sum(train), sum(test), sep=" / "))
 
 With this data set, train the models and calculate the AUC in the test set.
 
-```{r class.source = 'fold-hide', results='hide'}
+```{r warning=F}
 
 ```
 
